@@ -10,35 +10,39 @@ const { connection } = require('./connector')
 const covidTallyModel = connection;
 
 app.get("/totalRecovered",async(req,res) =>{
-    const resDoc = await covidTallyModel.aggregate({
+    const resDoc = await covidTallyModel.aggregate([{
         $group: {
             _id: "total",
             recovered: {$sum: "$recovered"},
         },
-    });
-   const firstResult = resDoc[0];
-   res.send({data: firstResult});
+    },
+]
+);
+   
+   res.send({data: resDoc});
 });
 
 app.get("/totalActive",async(req,res) =>{
-    const resDoc = await covidTallyModel.aggregate({
-        $group: {
+    const resDoc = await covidTallyModel.aggregate([
+        {$group: {
             _id: "total",
             recovered: {$sum: "$recovered"},
             infected: {$sum: "$infected"},
-        },
-    });
+        }
+    },
+    ]);
    const result = resDoc[0];
    res.send({data: { _id: "total",active:result.infected - result.recovered}});
 });
 
 app.get("/totalDeath",async(req,res) =>{
-    const resDoc = await covidTallyModel.aggregate({
-        $group: {
+    const resDoc = await covidTallyModel.aggregate([
+       { $group: {
             _id: "total",
             death: {$sum: "$death"},
         },
-    });
+    },
+    ]);
    const firstResult = resDoc[0];
    res.send({data: firstResult});
 });
@@ -48,8 +52,10 @@ app.get("/hotspotStates",async(req,res) =>{
         {
             $project: {
             state: "$state",
-            rate: {$round:[
-                {$divide:[{$subtract:["$infected","$recovered"]},"$infected",],
+            rate: {
+                $round:[
+                {$divide:[{$subtract:["$infected","$recovered"]},
+                "$infected",],
             },
           5,
         ],
@@ -70,7 +76,7 @@ app.get("/healthyStates",async(req,res) =>{
         {
             $project: {
             state: "$state",
-            mortalilty: {$round:[
+            mortality: {$round:[
                 {$divide:["$death", "$infected"],
             },
           5,
@@ -80,7 +86,7 @@ app.get("/healthyStates",async(req,res) =>{
   },
     {
         $match:{
-           mortalilty:{$lt: 0.005} 
+           mortality:{$lt: 0.005} 
         }
     }
 ]);
