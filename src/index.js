@@ -6,20 +6,21 @@ const port = 8080
 // Parse JSON bodies (as sent by API clients)
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-const { connection } = require('./connector')
+const { connection } = require('./connector');
+
 const covidTallyModel = connection;
 
-app.get("/totalRecovered",async(req,res) =>{
+app.get("/totalRecovered",async(req,res) => {
     const resDoc = await covidTallyModel.aggregate([{
         $group: {
             _id: "total",
             recovered: {$sum: "$recovered"},
         },
     },
-]
-);
+]);
    
-   res.send({data: resDoc});
+const firstResult = resDoc[0];
+res.send({data: firstResult});
 });
 
 app.get("/totalActive",async(req,res) =>{
